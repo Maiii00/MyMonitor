@@ -1,0 +1,31 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="MyCustomTheme" IsDarkMode="true" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIcon Icon="@Icons.Material.Filled.Memory" Class="mr-3" />
+        <MudText Typo="Typo.h6">System Pulse Monitor</MudText>
+    </MudAppBar>
+    <MudMainContent Class="mt-4">
+        <MudContainer MaxWidth="MaxWidth.Large">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    MudTheme MyCustomTheme = new MudTheme()
+    {
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#00d4ff",
+            Background = "#0b0f19",
+            AppbarBackground = "#111827",
+            Surface = "#1f2937",
+            TextPrimary = "#f3f4f6"
+        }
+    };
+}

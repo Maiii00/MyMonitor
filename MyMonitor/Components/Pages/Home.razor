@@ -1,0 +1,82 @@
+﻿@page "/"
+@using MyMonitor.Services
+@implements IDisposable
+@inject HardwareService Hardware
+
+<MudText Typo="Typo.h4" Class="mb-6">System Pulse Dashboard</MudText>
+
+<MudGrid>
+    @if (metrics != null)
+    {
+        @* 依硬體名稱分組 *@
+        @foreach (var group in metrics.GroupBy(x => x.Name))
+        {
+            <MudItem xs="12">
+                <MudText Typo="Typo.h6" Color="Color.Primary" Class="mt-4">@group.Key</MudText>
+                <MudDivider />
+            </MudItem>
+
+            @foreach (var m in group)
+            {
+                <MudItem xs="12" sm="6" md="3">
+                    <MudPaper Elevation="1" Class="pa-3 d-flex justify-space-between align-center" Style="height: 65px;">
+                        <div>
+                            @* 感測器名稱 *@
+                            <MudText Style="font-size: 0.8rem; font-weight: bold; color: #9ca3af; line-height: 1.2;">
+                                @m.DisplayName
+                            </MudText>
+                            @* 原始數值與類型 *@
+                            <div class="d-flex gap-2">
+                                <MudText Typo="Typo.caption" Color="Color.Info">Raw: @m.Value</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Warning">T: @m.SensorType</MudText>
+                            </div>
+                            @* 數據類別 *@
+                            <MudText Typo="Typo.caption" Color="Color.Default" Style="font-size: 0.7rem;">
+                                @m.Category
+                            </MudText>
+                        </div>
+
+                        @* 格式化數值 *@
+                        <MudText Style="font-family: 'Consolas'; font-weight: bold; font-size: 1.1rem;"
+                                 Color="@GetThresholdColor(m)">
+                            @m.FormattedValue
+                        </MudText>
+                    </MudPaper>
+                </MudItem>
+            }
+        }
+    }
+</MudGrid>
+
+@code {
+    private List<HardwareInfo> metrics = new();
+    private CancellationTokenSource _cts = new();
+
+    protected override void OnInitialized()
+    {
+        // 啟動每秒更新的監控任務
+        _ = Task.Run(async () =>
+        {
+            while (!_cts.Token.IsCancellationRequested)
+            {
+                metrics = Hardware.GetMetrics();
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(1000, _cts.Token);
+            }
+        }, _cts.Token);
+    }
+
+    // 根據數值動態回傳顏色
+    private Color GetThresholdColor(HardwareInfo m)
+    {
+        if (m.Category == "Temperature" && m.Value > 80) return Color.Error;
+        if (m.Category == "Load" && m.Value > 90) return Color.Warning;
+        return Color.Inherit;
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}

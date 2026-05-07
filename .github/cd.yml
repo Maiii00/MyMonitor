@@ -1,0 +1,45 @@
+name: Continuous Deployment
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        include-prerelease: true
+
+    - name: Publish EXE
+      run: |
+        dotnet publish -c Release `
+          -f net10.0-windows10.0.19041.0 `
+          -r win-x64 `
+          --self-contained true `
+          -p:PublishSingleFile=true `
+          -p:WindowsPackageType=None `
+          -o ./publish
+
+    - name: Zip the build
+      shell: pwsh
+      run: Compress-Archive -Path ./publish/* -DestinationPath MyMonitor_Windows_x64.zip
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: MyMonitor_Windows_x64.zip
+        body: "Automated Build for MyMonitor"
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
