@@ -17,8 +17,10 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.x'
-        include-prerelease: true
+        dotnet-version: '9.0.x'
+
+    - name: Install MAUI Workload
+      run: dotnet workload install maui --ignore-failed-sources
 
     - name: Restore Dependencies
       run: dotnet restore
